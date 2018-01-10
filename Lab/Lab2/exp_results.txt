@@ -1,0 +1,32 @@
+(multiflow) dgallitelli@dgallitelli-HP:~/Documents/scikit-multiflow/skmultiflow/classification/myclass$ python run_experiments.py >> exp_results.txt
+skmultiflow.classification.trees.hoeffding_tree - INFO - No Nominal attributes have been defined, will consider all attributes as numerical
+root - INFO - Prequential Evaluation
+root - INFO - Generating 2 targets.
+root - INFO - Pretraining on 1000 samples.
+root - INFO - Evaluating...
+root - INFO - 5.0%
+root - INFO - 10.0%
+root - INFO - 15.0%
+root - INFO - 20.0%
+root - INFO - 25.0%
+root - INFO - 30.0%
+root - INFO - 35.0%
+root - INFO - 40.0%
+root - INFO - 45.0%
+root - INFO - 50.0%
+root - INFO - 55.0%
+root - INFO - 60.0%
+root - INFO - 65.0%
+root - INFO - 70.0%
+root - INFO - 75.0%
+root - INFO - 80.0%
+root - INFO - 85.0%
+root - INFO - 90.0%
+root - INFO - 95.0%
+root - INFO - 100.0%
+root - INFO - 
+Evaluation time: 28.638 s
+root - INFO - Total instances: 10000
+root - INFO - Classifier 0 - Global accuracy: 0.719
+root - INFO - Classifier 1 - Global accuracy: 0.826
+root - INFO - Classifier 2 - Global accuracy: 0.78
