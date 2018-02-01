@@ -37,3 +37,34 @@ Some *application* examples:
 - Time series prediction
 
 ## Data Stream Algorithms
+
+In order to allow this *probabilistic* approach to knowledge discovery, some new algorithms are required. Those should guarantee, with a tunable parameter of confidence, certain performances in terms of errors. In general, we are looking for small error rate with high probability, which means mathematically that:
+> ![approx.png](./images/approx.png)
+
+### 8-bit counting: the Morris Approximate Counting Algorithm
+
+The very first time something close to the idea behind *Data Stream Algorithm* has been talked about dates back to 1978 with a paper from Robert Morris named "*Counting Large Numbers of Events in Small Registers*".
+
+![8bit.png](./images/8bit.png)
+
+The main idea behind it was that, given a 8-bit register, we want to store the highest possible number of numbers, or *events*. With the normal binary system applied to the standard decimal counting, we can store up to *2^8 -1* numbers, or 255 numbers.
+
+If we used instead a logarithmic scale, then the number of events that can be stored in 8 bits would greatly increase:
+
+![log-8bit.png](./images/log-8bit.png)
+
+In order to implement such strategy, Morris came up with the *approximate counting algorithm*:
+
+```
+1. Init counter c <- 0
+2. for every event in the stream
+3. 		do rand = random number between 0 and 1
+4. 			if rand < p
+5. 				then c <- c + 1
+```
+
+where *p* is a parameter of the algorithm.
+
+Basically, the algorithm tries increases the counter with a probability *p*. If `p = 1/2`, we can store up to `2 x 256` values, with standard deviation `sigma = sqrt(n)/2`. If `p = 2^(-c)`, the error of the approximation is `E[2^c] = n+2` with variance `sigma^2 = n(n+1)/2`. Given a number `b`, if `p = b^(-c)`, then `E[b^c] = n(b-1)+b` with variance `sigma^2 = (b-1)n(n+1)/2`.
+
+### Distinct item counting: Flajolet-Martin Probabilistic Counting Algorithm
