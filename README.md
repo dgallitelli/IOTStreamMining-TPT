@@ -65,6 +65,81 @@ In order to implement such strategy, Morris came up with the *approximate counti
 
 where *p* is a parameter of the algorithm.
 
-Basically, the algorithm tries increases the counter with a probability *p*. If `p = 1/2`, we can store up to `2 x 256` values, with standard deviation `sigma = sqrt(n)/2`. If `p = 2^(-c)`, the error of the approximation is `E[2^c] = n+2` with variance `sigma^2 = n(n+1)/2`. Given a number `b`, if `p = b^(-c)`, then `E[b^c] = n(b-1)+b` with variance `sigma^2 = (b-1)n(n+1)/2`.
+Basically, the algorithm tries increases the counter with a probability *p*:
+- If `p = 2^(-1) = 1/2`, we can store up to `2 x 256` values, with standard deviation `sigma = sqrt(n)/2`.
+- If `p = 2^(-c)`, the error of the approximation is `E[2^c] = n+2` with variance `sigma^2 = n(n+1)/2`
+- Given a number `b`, if `p = b^(-c)`, then `E[b^c] = n(b-1)+b` with variance `sigma^2 = (b-1)n(n+1)/2`.
 
-### Distinct item counting: Flajolet-Martin Probabilistic Counting Algorithm
+### Count-Distinct algorithm: Flajolet-Martin Probabilistic Counting
+
+![fm_algorithm.png](./images/fm_algorithm.png)
+
+The **Flajolet–Martin algorithm** is an algorithm for approximating the *number of distinct elements* in a stream with a single pass, exploiting the logarithmic representation seen before. The algorithm was introduced by Philippe Flajolet and G. Nigel Martin in their 1984 article "*Probabilistic Counting Algorithms for Data Base Applications*".
+
+By definition of the problem, we can infer that:
+> if the stream contains *n* elements with *m* of them being unique, then the algorithm runs in *O(n)* time and need *O(log(m))* memory.
+
+Given the pseudo-code above, the algorithm is based on a hash function *h(x)* to represent the incoming example. Then, the *position of the least significant 1-bit* (or, the left-most [\*] bit set to 1) is used to update a bitmap representing the "buckets" of the hash function. Finally, the position *b* of the left-most zero in the bitmap is considered. Because it can be stated that, with logarithmic distribution:
+
+> ![log_pos.png](./images/log_pos.png)
+
+> [EN] for me, how this error computation is made is magic. Any help is welcome.
+
+then we return the approximate value given *b* index of the bitmap. Worst case scenario, the error is +-1.12 .
+
+[\*] : everybody knows that the least significant bit should be counted starting from the right. In this example, it was not such a case, bear with it. The concept does not change, only the position in the bitmap would change.
+
+##### Example:
+
+|item x|hash(x)|p(hash(x))|bitmap|
+|------|-------|----------|------|
+|||||
+
+Let's start with an empty table. The first example incoming is *a*, which is magically-hashed to *0110*. It does not matter how the hashing function generates the binary string, as any can be used.
+
+|item x|hash(x)|p(hash(x))|bitmap|
+|------|-------|----------|------|
+|a|0110|||
+
+`p(hash(x))` computes the position of the left-most bit set to 1, therefore in this case `p(hash(x)) = 1`. Then, `bitmap[p(hash(x))]` is updated (considering the left-most bit as `bitmap[0]`).
+
+|item x|hash(x)|p(hash(x))|bitmap|
+|------|-------|----------|------|
+|a|0110|1|0100|
+
+Following the same idea, further examples are handled like this:
+
+|item x|hash(x)|p(hash(x))|bitmap|
+|------|-------|----------|------|
+|a|0110|1|0100|
+|b|1001|0|1100|
+|c|0111|1|1100|
+|a|0110|1|1100|
+|b|1001|0|1100|
+|d|1100|0|1100|
+|**e**|**0001**|**3**|**1101**|
+|f|1010|0|1101|
+
+> [EN] the record in bold chars has been changed from the slides example, to show a third bit switch
+
+With this, we can compute *at any time* the count of unique elements in the stream. Since the left-most bit set to 0 in the bitmap `b = 2`, our estimation of unique numbers `n = (2^b)/0.77351 = 5.17`. The true `n` is 6, but it is still a good approximation.
+
+##### Example 2:
+
+If we had a situation like this:
+|item x|hash(x)|p(hash(x))|bitmap|
+|------|-------|----------|------|
+|a|0110|1|0100|
+|a|0110|1|0100|
+|a|0110|1|0100|
+|e|0001|3|0101|
+
+Then we would obtain:
+- `b = 0`
+- `n = 2^0 / 0.77351 = 1.29`
+
+##### A modified FM Algorithm
+
+A modified version of the same algorithm used the *max* function instead of a bitmap.
+
+![mod_fm.png](./images/mod_fm.png)
