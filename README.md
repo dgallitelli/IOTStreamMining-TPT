@@ -428,11 +428,11 @@ We can maintain simple statistics over sliding windows, using `O(1/epsilon * log
 
 In the domain of stream analytics, sometimes the data and its properties change in unforeseen ways, making the predictions given by the previously built model less accurate. Therefore, there is a need for **incremental learning**, which implies either *updating the model* once the change has been detected (left schema on the following image), or *using a more complex algorithm*, possibly made of multiple estimators (right schema on the following image).
 
-![dm-conc-drift.png](./images/dm-conc-drift.png)
+<div style="text-align:center"><img src ="./images/dm-conc-drift.png" /></div>
 
 Let's consider a standard learning algorithm, with only one estimator. Our goal is to include a way to **detect a distribution change** by means of some kind of *alarm*, as well as a way to generate a new prediction which **minimizes the prediction error**. This situation can be represented by the following schema of a concept-drift-handling algorithm.
 
-![conc-drift-pred.png](./images/conc-drift-pred.png)
+<div style="text-align:center"><img src ="./images/conc-drift-pred.png" /></div>
 
 Change detection is a tricky business. There may be cases in which false alarms are launched, and those may be caused by *noise* in the data or short-time changes in the distribution. Once could say that the design of a change detector is a *compromise* between *detecting true changes* and *avoiding false alarms*.
 
@@ -468,12 +468,34 @@ Unlike the CUSUM algorithm, it is possible to have *negative values*.
 
 ![geom-mov-avg-test.png](./images/geom-mov-avg-test.png)
 
-The forgetting factor λ is used to give more or less weight to the last data arrived. The greater the λ, the greater the weight of the most recent value.
+The forgetting factor λ is used to give more or less weight to the last data arrived. The greater the λ, the greater the weight of the most recent value. The treshold h is used to tune the sensitivity and false alarm rate of the detector.
 
 #### Detecting concept drift: the Statistical Test
 
-<!-- Should explain something, though not sure what ... -->
+> Note to the reader: this part is taken from the MOA book: ["Data Stream Mining: A Practical Approach"](https://goo.gl/HX4j8L). I found most of it pretty easy to understand, therefore I copy-pasted it the first chunk of it.
 
-![stat-test.png](./images/stat-test.png)
+CUSUM and GMA are methods for dealing with numeric sequences. For more
+complex populations, we need to use other methods. There exist some statistical
+tests that may be used to detect change. A statistical test is a procedure for
+deciding whether a hypothesis about a quantitative feature of a population is
+true or false. We test an hypothesis of this sort by drawing a random sample
+from the population in question and calculating an appropriate statistic on its
+items. If, in doing so, we obtain a value of the statistic that would occur rarely
+when the hypothesis is true, we would have reason to reject the hypothesis.
 
-![stat-test-drift.png](./images/stat-test-drift.png)
+Given two sources of data, `x_0` and `x_1`, we want to test the hypothesis `H_0`, e.g. that the two sources come from the same distribution. To do so, we need two statistical properties, such as two estimates, `µ_0` and `µ_1`, and the variances `σ_0 ^2` and `σ_1 ^2`. If there is no
+change in the data, these estimates will be consistent. Otherwise, a hypothesis test will reject H0 and a change is detected. An easy way to test this consistence is to compute the difference of the estimates:
+![stat-test.png](./images/stat-test-1.png) or with the `χ^2` test:
+![stat-test.png](./images/stat-test-2.png)
+
+<div style="text-align:center"><img src ="./images/stat-test-drift.png" /></div>
+
+##### Example:
+
+For example, suppose we want to design a change detector using a statistical
+test with a probability of false alarm of 5%, that is: ![stat-test.png](./images/stat-test-3.png)
+
+Since, with Gaussian Distribution, `P(X < 1.96) = 0.975` the test becomes:
+test with a probability of false alarm of 5%, that is: ![stat-test.png](./images/stat-test-3.png)
+
+<!-- ### Prediction with Concept Drift: ADWIN (ADaptive data stream sliding WINdow) -->
