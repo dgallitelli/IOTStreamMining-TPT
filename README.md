@@ -36,7 +36,7 @@ Some *application* examples:
 - Real-time social network mining for sentiment analysis
 - Time series prediction
 
-## Data Stream Algorithms
+## **Data Stream Algorithms**
 
 In order to allow this *probabilistic* approach to knowledge discovery, some new algorithms are required. Those should guarantee, with a tunable parameter of confidence, certain performances in terms of errors. In general, we are looking for small error rate with high probability, which means mathematically that:
 > ![approx.png](./images/approx.png)
@@ -155,3 +155,272 @@ In this algorithm, the stream is divided in `m = 2^b` substreams, and the estima
 [\*] **Harmonic Mean**: it's one of different kinds of averages, typically used when the average of *rates* is desired. It's the reciprocal of the **arithmetic mean** of the reciprocals of a given set, therefore: `Hm = len(X) / sum(1 / x_i)` where X is the array of examples
 
 [\*\*] **Stochastic Averaging**: when performing `m` experiments in parallel, the standard deviation can be averaged as `st_dev' = st_dev/sqrt(m)`, with relative accuracy of `0.78/sqrt(m)`.
+
+### Frequent Itemset Mining: MAJORITY Algorithm
+In the *frequent itemset mining* problem, we are looking to build a dataset of frequent itemset while reading a stream. There are different algorithms to do so.
+
+```
+[MAJORITY]
+1 Init counter c <- 0
+2 for every item s in the stream
+3	if counter is zero
+4 		then pick up the item
+5 	if item is the same
+6 		then increment counter
+7 	else decrement counter
+```
+
+The easiest of them is the **Majority** algorithm, which increments a counter related to the item read from the stream.
+
+### Frequent Itemset Mining: FREQUENT Algorithm
+
+```
+[FREQUENT]
+1 for every item i in the stream
+2 	if item i is not monitored
+3 		if < k items monitored
+4 			then add a new item with count 1
+5 		else if an item z whose count is zero exists
+6 			then replace this item z by the new one
+7 		else decrement all counters by one
+8 	else item i is monitored
+9 		increase its counter by one
+```
+
+A different version instead is the **Frequent** algorithm, which only keeps monitoring the `k`-most frequent elements. Whenever an example is read from the stream, its counter is updated if it's not new, otherwise, the list of monitored items is updated as specified in the snippet above.
+
+<!-- Example? -->
+
+### Frequent Itemset Mining: LOSSYCOUNTING Algorithm
+
+![lossyc.png](./images/lossyc.png)
+
+##### The Class Version
+
+The **LossyCounting** algorithm is based on the concept of periodically removing items with low frequency from the list of monitored items. Every time a new item is read, its counter gets updated
+
+- by 1 if it's an already monitored item
+- by 1 + *delta* , where *0 < delta < floor(n/k)*, if it's a new item
+
+Once the update is done, then the counters are all decremented by one, and the elements with frequency equal to zero are removed.
+
+##### The Paper/Internet Version
+
+The main concept is still the same, but the idea is to divide the stream into *windows* ([EN] maybe n/k?). Every time a new window is read, the counter for the item is updated by the frequency in the window. Once the full window is read, then all counters are decremented by one. The algorithm is then iterated until the end of the stream.
+
+The new algorithm would more or less look like so:
+
+```
+[CUSTOM LOSSYCOUNTING]
+1 	define window size W
+2	define window counter C
+3 	for every item i in the stream S
+4 		increase counter of item i by 1 (or add new item with count 1)
+5		increase C by 1
+6		if C = W
+7			decrement all counters by 1
+8			remove items with 0 count
+9 			reset C to 0
+```
+
+The actual count of each item depend on the window size. Still, it is possible to find the same frequent itemset; if `stream-size = N` and `window-size = W = 1/e`, then the **frequency error** is `f_e = eN`.
+
+##### Example:
+
+Let's apply the LOSSYCOUNTING algorithm to the following stream:
+
+|a|b|c|d|a|c|a|a|a|c|d|c|a|a|c|b|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+
+`STEP 0`
+
+Let's define a window size `W = 4` (since we have 16 elements, this way the example is easier). At the beginning, the window counter is `C = 0`.
+
+`STEP 1`
+
+The first window to be analyzed is:
+
+|a|b|c|d|
+|-|-|-|-|
+
+All of them are new items, therefore the *frequent itemset list* becomes, before decrementing it:
+
+|a|b|c|d|
+|-|-|-|-|
+|1|1|1|1|
+
+Since we reached window boundary, all counters are decremented by one:
+
+|a|b|c|d|
+|-|-|-|-|
+|0|0|0|0|
+
+All items are dropped from the list.
+
+`STEP 2`
+
+|a|c|a|a|
+|-|-|-|-|
+
+The itemset list becomes:
+
+|a|c|
+|-|-|
+|3|1|
+
+After the update:
+
+|a|
+|-|
+|2|
+
+`STEP 3`
+
+|a|c|d|c|
+|-|-|-|-|
+
+The itemset list becomes:
+
+|a|c|d|
+|-|-|-|
+|3|2|1|
+
+After the update:
+
+|a|c|
+|-|-|
+|3|2|
+
+`STEP 4`
+
+|a|a|c|b|
+|-|-|-|-|
+
+The itemset list becomes:
+
+|a|c|b|
+|-|-|-|
+|5|3|1|
+
+After the update:
+
+|a|c|
+|-|-|
+|4|2|
+
+For this example, we have `stream-size = N = 16` and `window-size = W = 4 = 1/e --> e = 1/4 = 0.25`, the `frequency error = f_e = 16*0.25 = 4`.
+
+##### Example 2:
+
+What if, with the same stream, we changed to window size to something like *8*?
+
+|a|b|c|d|a|c|a|a|a|c|d|c|a|a|c|b|
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+
+`STEP 0`
+
+Let's define a window size `W = 8`. At the beginning, the window counter is `C = 0`.
+
+`STEP 1`
+
+|a|b|c|d|a|c|a|a|
+|-|-|-|-|-|-|-|-|
+
+The itemset list becomes:
+
+|a|b|c|d|
+|-|-|-|-|
+|4|1|2|1|
+
+After the update:
+
+|a|c|
+|-|-|
+|3|1|
+
+`STEP 2`
+
+|a|c|d|c|a|a|c|b|
+|-|-|-|-|-|-|-|-|
+
+The itemset list becomes:
+
+|a|c|d|b|
+|-|-|-|-|
+|6|4|1|1|
+
+After the update:
+
+|a|c|
+|-|-|
+|5|3|
+
+For this example, we have `stream-size = N = 16` and `window-size = W = 8 = 1/e --> e = 1/8 = 0.125`, the `frequency error = f_e = 16*0.125 = 2`.
+
+### Frequent Itemset Mining: SPACE SAVING Algorithm
+
+![spacesaving.png](./images/spacesaving.png)
+
+**Space Saving** can be considered as a merge of *LossyCounting* and *Frequent* algorithms. Instead of dropping low count items, just like in the *LossyCounting* algorithm, the **Space Saving** algorithm replaces the item with the lowest counter with the just found not monitored item, and then increments its counter by 1.
+
+##### Example:
+
+Let's suppose that we have an itemset count as such:
+
+|a|b|c|
+|-|-|-|
+|7|5|3|
+
+then, we read input `d`. The itemset list has reached maximum capacity (set before starting). What happens? The `d` input replaces the item with the lowest count, which is `c`. The itemset list becomes:
+
+|a|b|d|
+|-|-|-|
+|7|5|4|
+
+### Frequent Itemset Mining: COUNT-MIN SKETCH Algorithm
+
+The counter algorithms analyzed until now only handle the “*arrivals only*” model, not the “**arrivals and departures**” one. This means that, if there is a case of "negative frequency", the previous algorithms do not have a deterministic solution. Sketch algorithms compute a summary that is a linear transform of the frequency vector.
+
+The **COUNT-MIN** algorithm is one of such algorithms. It uses a two-dimensional array with width `w = ceil(e/epsilon)` and depth `d = ceil(ln(1/delta))`, where both *epsilon* and *delta* are user-given parameters which tune the performances of the algorithm, since the depth represents also the **update time** of the algorithm (the time it takes to read the column/array of values). NB: `e` in the width formula is the Euler's number `e = 2.718281`.
+
+![cm-sketch.png](./images/cm-sketch.png)
+
+In a nutshell, CM-Sketch computes frequency data adding and removing real values. Every time it reads an input `(j,+c)`, where `c` is a real value, for each row `i` of the table, apply the corresponding *hash function* `h_i` to obtain a column index `k = h_i(j)`. Then increment the value in `j,k` (with `j = [1...d]` and `k = [1...w]`) by `+c`. In order to compute the frequency `f` then, it is as simple as computing the minimum of those updated values, which means `f = min[i,h_i(j)]`.
+
+Given the *epsilon* parameter, it is guaranteed that this algorithm provides a frequency `f <= f_r + epsilon*N`, where `f_r` is the real frequency and `N` is the stream size.
+
+### Reservoir Sampling
+
+Finally, given a data stream `X`, we want to choose `k` items with the same probability,
+storing only `k` elements in memory.
+
+```
+[RESERVOIR SAMPLING]
+1 	for every item i in the first k items of the stream
+2 		store item i in the reservoir
+3 	n <- k
+4 	for every item i in the stream after the first k items of the stream
+5 		select a random number r between 1 and n
+6 		if r < k
+7 			then replace item r in the reservoir with item i
+8 		n = n + 1
+```
+
+### The problem of MEAN and VARIANCE
+
+Given a data stream X, computing statistics such as **mean** or **variance** loses part of the meaning: these computations have to be done on a *sliding window* of `n` element, since mean and variance are based on the division operator and therefore is not cumulative.
+
+![mean_var.png](./images/mean_var.png)
+
+We can maintain simple statistics over sliding windows, using `O(1/epsilon * log^2(N))` space, where:
+- `N` is the length of the sliding window
+- `epsilon` is the accuracy parameter
+
+### Exponential Histograms
+
+<!-- WHAT -->
+
+
+<!-- ## **Concept Drift** -->
+
+<!-- ![dm-conc-drift.png](./images/dm-conc-drift.png) -->
