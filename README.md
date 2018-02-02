@@ -12,6 +12,8 @@ Everything in here is based on my understanding of the topic, therefore some thi
 
 Enjoy.
 
+*****
+
 ## Introduction
 
 In the Big Data world, data is becoming increasingly *huge* and *fast*. This trend will not decrease, but it will become even stronger, considering how IOT devices are becoming mainstream.
@@ -420,7 +422,58 @@ We can maintain simple statistics over sliding windows, using `O(1/epsilon * log
 
 <!-- WHAT -->
 
+******
 
-<!-- ## **Concept Drift** -->
+## **Concept Drift**
 
-<!-- ![dm-conc-drift.png](./images/dm-conc-drift.png) -->
+In the domain of stream analytics, sometimes the data and its properties change in unforeseen ways, making the predictions given by the previously built model less accurate. Therefore, there is a need for **incremental learning**, which implies either *updating the model* once the change has been detected (left schema on the following image), or *using a more complex algorithm*, possibly made of multiple estimators (right schema on the following image).
+
+![dm-conc-drift.png](./images/dm-conc-drift.png)
+
+Let's consider a standard learning algorithm, with only one estimator. Our goal is to include a way to **detect a distribution change** by means of some kind of *alarm*, as well as a way to generate a new prediction which **minimizes the prediction error**. This situation can be represented by the following schema of a concept-drift-handling algorithm.
+
+![conc-drift-pred.png](./images/conc-drift-pred.png)
+
+Change detection is a tricky business. There may be cases in which false alarms are launched, and those may be caused by *noise* in the data or short-time changes in the distribution. Once could say that the design of a change detector is a *compromise* between *detecting true changes* and *avoiding false alarms*.
+
+Some **metrics** can be defined to *evaluate* concept drift:
+
+- Mean Time between False Alarms (MTFA)
+- Mean Time to Detection (MTD)
+- Missed Detection Rate (MDR)
+- Average Run Length (ARL(θ))
+
+Ideally, an optimal change detector and predictor system should have:
+
+- High accuracy in the prediction
+- Low mean time to detection (MTD), false positive rate (FAR) and missed detection rate (MDR)
+- Low computational cost: minimum space and time needed
+- Theoretical guarantees
+- No parameters needed
+
+#### Detecting concept drift: the CUSUM Test
+
+The cumulative sum (CUSUM algorithm), gives an alarm when the mean of the input data is significantly different from zero. It's a memoryless test, and its accuracy depends
+on the choice of parameters υ and h. Mreover, it doesn't handle negative values for the instance read.
+
+![cusum-test.png](./images/cusum-test.png)
+
+#### Detecting concept drift: the Page Hinckley Test
+
+Unlike the CUSUM algorithm, it is possible to have *negative values*.
+
+![page-hinckley-test.png](./images/page-hinckley-test.png)
+
+#### Detecting concept drift: the Geometric Moving Average Test
+
+![geom-mov-avg-test.png](./images/geom-mov-avg-test.png)
+
+The forgetting factor λ is used to give more or less weight to the last data arrived. The greater the λ, the greater the weight of the most recent value.
+
+#### Detecting concept drift: the Statistical Test
+
+<!-- Should explain something, though not sure what ... -->
+
+![stat-test.png](./images/stat-test.png)
+
+![stat-test-drift.png](./images/stat-test-drift.png)
