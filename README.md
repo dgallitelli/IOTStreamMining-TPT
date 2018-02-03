@@ -675,4 +675,26 @@ When a change is detected, the worst classifier is removed and a new classifier 
 
 ![adwin-bagging.png](./images/adwin-bagging.png)
 
-<!-- #### Ensemble: Leveraging Bagging -->
+#### Ensemble: Leveraging Bagging
+
+![lev-bagging-alg.png](./images/lev-bagging-alg.png)
+
+The performance of bagging algorithms can be improved, in terms of accuracy and diversity, by means of three possible **randomization**:
+
+- manipulating the input data
+- manipulating the classifier algorithms
+- manipulating the output targets
+
+Where the classic bagging algorithm, proposed previously, uses a `Poisson(λ), λ = 1` distribution, it is possible to use greater values of `λ`: this increases the diversity of the weights and modifies the input space of the classifiers inside the ensemble. However, the optimal value of `λ` may be different for each dataset. This is the **Leveraging Bagging** algorithm.
+
+![poisson-distr.png](./images/poisson-distr.png)
+
+Another further improvement is to add randomization at the output of the ensemble using output codes: this is the **Leveraging Bagging MC** algorithm, which combines `Poisson(λ)` distribution and Random Output Codes. This algorithm assigns for each classifier `m` and class `c` a binary value `µ_m(c)` in a uniform, independent, and random way, but ensuring that half of the classes are mapped to `0`. The output of the classifier for an example is the class which has more votes of its binary mapping classes. This is great for **solving multi-class problems with binary classifiers**.
+
+![lev-bag-mc.png](./images/lev-bag-mc.png)
+
+The **Fast Leveraging Bagging ME (misclassified examples)** goes one step beyond that. It gives a `weight = 1` to misclassified example: if an instance is misclassified it is accepted with a weight of one. If not, it is accepted with probability `e_T /(1 − e_T )`, where the error estimate `e_T` is computed as a smoothed version of the proportion of misclassified examples using the estimation of ADWIN that is monitoring the error. This makes the algorithm very fast, although not much more accurate.
+
+An empirical evaluation is the following:
+
+![lev-bag-eval.png](./images/lev-bag-eval.png)
