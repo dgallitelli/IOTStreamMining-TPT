@@ -698,3 +698,20 @@ The **Fast Leveraging Bagging ME (misclassified examples)** goes one step beyond
 An empirical evaluation is the following:
 
 ![lev-bag-eval.png](./images/lev-bag-eval.png)
+
+#### Ensemble: Boosting
+
+For batch learning, a boosting algorithm was defined as an algorithm that transforms a weak learner into a strong one. An example is AdaBoost, which sequentially constructs a series
+of base learner in such a way that examples that are misclassified by current base learner `h_m` are given more weights in the training set for the following learner `h_m+1`, whereas the correctly classified examples are given less weights. It can be said that AdaBoost focuses on *difficult examples*.
+
+Oza and Russell proposed their version of **Online Boosting** algorithm.
+
+![online-boosting.png](./images/online-boosting.png)
+
+When a base model `h_m` misclassifies a training example, the Poisson distribution parameter `λ` associated with that example is increased when presented to the next base model; otherwise, it is decreased.
+
+#### Ensemble: Stacking
+
+<!-- TODO: write something -->
+
+![stacking.png](./images/stacking.png)
