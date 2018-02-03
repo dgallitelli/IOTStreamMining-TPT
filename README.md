@@ -420,7 +420,73 @@ We can maintain simple statistics over sliding windows, using `O(1/epsilon * log
 
 ### Exponential Histograms
 
-<!-- WHAT -->
+Exploiting the logarithmic compression of values is very useful when storing a window into memory. This is done by partitioning the content of the data stream sliding window into buckets of **exponentially-growing size**. This means that the size of the buckets follows a `2^n` pattern, with `n` starting as `0`. The number of buckets of the same size is controlled by a parameter `M`. In order to give answers in `O(1)` time, three counters are kept: `LAST`, `TOTAL` and `VARIANCE`.
+
+Given a window of `W` elements, and `e` maximum error (user-controllable parameter), then:
+
+- the parameter  `M` is obtained as `M = 1/(2e)`
+- the total number of buckets is `M*log(W/M)`
+
+##### Example: how buckets are generated
+
+Let's consider this stream W:
+
+|1110001010101|
+|-|
+
+Suppose that the first bit to have arrived is the left-most bit of the given stream. The maximum error is `e=1/6=0.1667`. How is this window stored in memory? What happens when a new `1` bit arrives?
+
+If `e=1/6`, then `M=3`, meaning that we can at most 3 buckets of the same size. In order to see the buckets, let's start unraveling the stream.
+
+The first `1` arrives. It is put in its own bucket. Then other two `1`s arrive, each is put in its own bucket.
+
+|1|1|1|0001010101|
+|-|-|-|-|
+
+Then, a `0` arrives. There can't be another bucket with size 1, therefore we need to compress the buckets with size 1, starting from the left-most one. It becomes:
+
+|11|1|0|001010101|
+|-|-|-|-|
+
+One more iteration:
+
+|11|1|0|0|01010101|
+|-|-|-|-|-|
+
+With the next `1`, we have the same problem as before: we compress.
+
+|11|10|0|0|1010101|
+|-|-|-|-|-|
+
+In three iterations, we will have the following situation:
+
+|11|10|00|1|0|1|0101|
+|--|--|--|-|-|-|----|
+
+With the new `0` incoming, just like before we would need to compress two buckets of 1 size into a 2-sized bucket. But we reached the M threshold for them too, therefore two two-sized buckets (the left-most ones) will be compressed to a 4-sized bucket.
+
+|11|10|00|10|1|0|101|
+|--|--|--|--|-|-|---|
+
+|1110|00|10|1|0|101|
+|----|--|--|-|-|---|
+
+With the next three iterations, we would obtain:
+
+|1110|00|10|1|0|1|01|
+|----|--|--|-|-|-|--|
+
+|1110|00|10|10|1|0|1|
+|----|--|--|--|-|-|-|
+
+What if another `1` arrives?
+
+|1110|00|10|10|1|0|1|1|
+|----|--|--|--|-|-|-|-|
+
+|1110|0010|10|10|1|1|
+|----|----|--|--|-|-|
+
 
 ******
 
@@ -498,4 +564,115 @@ test with a probability of false alarm of 5%, that is: ![stat-test.png](./images
 Since, with Gaussian Distribution, `P(X < 1.96) = 0.975` the test becomes:
 test with a probability of false alarm of 5%, that is: ![stat-test.png](./images/stat-test-3.png)
 
-<!-- ### Prediction with Concept Drift: ADWIN (ADaptive data stream sliding WINdow) -->
+### Change detection: ADWIN (ADaptive data stream sliding WINdow)
+
+**ADWIN** is a parameter-free adaptive size sliding window, with theoretical guarantees.
+
+> ADWIN is an adaptive sliding window algorithm, whose window size is recomputed online according to the rate of change observed.
+
+It keeps an *adaptive sliding window* which tries to estimate the **mean** of a monitored numeric variable. The window grows while things are stable, while, upon a change of the mean, the window is cut into two parts: an "old" part, which is discarded, and a "new" part, with which now has a new mean.
+
+![ADWIN0.png](./images/ADWIN0.png)
+
+The size of the window is not a problem, since storing of the window is handled by an internal exponential compression scheme, basically *exponential histograms* (see *exponential histograms* example above).
+
+![adwin.png](./images/adwin.png)
+![adwin1.png](./images/adwin-1.png)
+![adwin-2.png](./images/adwin-2.png)
+
+Since ADWIN algorithm uses the *Data Stream Sliding Window Model*:
+
+- It tries `O(log(W))` cutpoints
+- It uses `O(M*log(W/M))` memory words (assuming a memory word can contain numbers up to `W`).
+- It can process the arrival of a new element in `O(1)` amortized time and `O(log(W))` worst-case time.
+- It can provide the exact counts of 1’s in `O(1)` time per point.
+
+It is not a purely heuristical algorithm, because it has theoretical guarantees on the rate of false positives/negatives, as well as on the relation of the window size and change rates.
+
+![adwin-theor2.png](./images/adwin-theor2.png)
+
+******
+
+## Evaluation
+
+The evaluation procedure of a learning algorithm determines which examples
+are used for training the algorithm, and which are used to test the model output
+by the algorithm. With the new incremental approach to the learning process, a new definition of accuracy over time is needed, as well as new evaluation frameworks.
+
+### Error Estimation
+
+Two methods exists for error estimation:
+- **Hold-out**
+	- to be used only if a *testing dataset* is available, it consists of applying an unbiased estimator to the test set at regular time intervals
+	- it is generally more accurate
+- **Prequential/Interleaved-Test-Then-Train**
+	- if there is no testing data available, then this is the go-to method
+	- For each example in the stream, the actual model makes a prediction, and then uses it to update the mode - a bootstrap batch learner is needed!
+	- it's the cross-validation of the data streams
+
+*****
+
+## Classification
+
+*****
+
+## Ensemble Learning
+
+In machine learning classification, an ensemble of classifiers is a collection of several models combined together, in a form which can be generalized as the following algorithm:
+
+![ensemble.png](./images/ensemble.png)
+
+This procedure requires three elements to create an ensemble:
+1. A set S of training examples
+2. A base learning algorithm
+3. A method of assigning weights to examples (line 3 of the pseudo-code)
+
+The third requirement, the weighting of examples, forms the major difference between ensemble methods. Another potential difference is the voting
+procedure. Typically each member of the ensemble votes towards the prediction of class labels, where voting is either **weighted** or **unweighted**. In weighted
+voting individual classifiers have varying influence on the final combined vote,
+the models that are believed to be more accurate will be trusted more than
+those that are less accurate on average. In unweighted voting all models have
+equal weight, and the final predicted class is the label chosen by the majority of
+ensemble members. Ensemble algorithms, algorithms responsible for inducing
+an ensemble of models, are sometimes known as **meta-learning** schemes. They
+perform a higher level of learning that relies on lower-level base methods to
+produce the individual models.
+
+#### Ensemble: Bagging
+
+**Bagging** (*bootstrap aggregating*) combines the unweighted vote of multiple classifiers, each of which is trained on a different *bootstrap replicate* of the training set. A bootstrap replicate is a set of examples drawn randomly with replacement from the original training data, to match the size of the original training data. Bagging builds a set of M base models, with a bootstrap sample created by drawing random samples with replacement.
+
+![bagging-ex.png](./images/bagging-ex.png)
+
+This algorithm does not seem immediately applicable to data streams, because it appears that the entire data set is needed in order to construct bootstrap replicates. However, a modified version for incremental learning has been proposed by Oza and Russell, called **Online Bagging**. They demonstrated that the process of sampling bootstrap replicates from training data follows a *Binomial Distribution*, which tends to a *Poisson(1) distribution* with `N->infinite`. In their algorithm, they use this distribution to decide how many times to include the incoming example in the formation of a replicate set. This *online bagging algorithm* converges towards the original batch algorithm, which required the full dataset to be known.
+
+![online-bagging.png](./images/online-bagging.png)![poisson1.png](./images/poisson1.png)
+
+
+#### Ensemble: Hoeffding Option Trees
+
+![hoeff-opt-trees.png](./images/hoeff-opt-trees.png)
+
+The **Hoeffding option tree** is a regular Hoeffding tree containing additional option nodes that allow several tests to be applied, leading to multiple Hoeffding trees as separate paths. The Hoeffding option tree uses the class confidences in each leaf to help form the majority decision.
+
+![hoeff-opt-trees-alg.png](./images/hoeff-opt-trees-alg.png)
+
+#### Ensemble: Accuracy Weighted Ensemble
+
+The **accuracy weighted ensemble** algorithm consists of processing chunks of instances with size `W` by building a new classifier for each of the chunks (removing the old one). Then, each classifiier is weighted using the difference of *Mean Square Error* ![awe1.png](./images/awe1.png) for the newly built model ![awe3.png](./images/awe3.png) and the current one ![awe2.png](./images/awe2.png)
+
+For two classes classification with equal class priors, `MSE_r = 0.25`. Classifiers with accuracy less or equal than random classifier will be assigned weight `0` and the weights of other classifiers will be inversely proportional to their error in classifying calibration data of current user.
+
+#### Ensemble: Random Forests
+
+Random Forests is a method to use randomization on
+the input and on the internal construction of the decision trees. Random Forests are ensembles of trees with the following characteristics: the input training set is obtained by sampling with replacement, the nodes of the tree only may use
+a fixed number of random attributes to split, and the trees are grown without pruning.
+
+#### Ensemble: ADWIN Bagging
+
+When a change is detected, the worst classifier is removed and a new classifier is added.
+
+![adwin-bagging.png](./images/adwin-bagging.png)
+
+<!-- #### Ensemble: Leveraging Bagging -->
