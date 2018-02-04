@@ -38,6 +38,8 @@ Some *application* examples:
 - Real-time social network mining for sentiment analysis
 - Time series prediction
 
+******
+
 ## **Data Stream Algorithms**
 
 In order to allow this *probabilistic* approach to knowledge discovery, some new algorithms are required. Those should guarantee, with a tunable parameter of confidence, certain performances in terms of errors. In general, we are looking for small error rate with high probability, which means mathematically that:
@@ -206,6 +208,8 @@ The **LossyCounting** algorithm is based on the concept of periodically removing
 
 Once the update is done, then the counters are all decremented by one, and the elements with frequency equal to zero are removed.
 
+Given `f` threshold frequency, the algorithm will need at most `K = 1/f * log(f*N)` counters, and a window of `W = 1/e` elements.
+
 ##### The Paper/Internet Version
 
 The main concept is still the same, but the idea is to divide the stream into *windows* ([EN] maybe n/k?). Every time a new window is read, the counter for the item is updated by the frequency in the window. Once the full window is read, then all counters are decremented by one. The algorithm is then iterated until the end of the stream.
@@ -217,12 +221,14 @@ The new algorithm would more or less look like so:
 1 	define window size W
 2	define window counter C
 3 	for every item i in the stream S
-4 		increase counter of item i by 1 (or add new item with count 1)
-5		increase C by 1
-6		if C = W
-7			decrement all counters by 1
-8			remove items with 0 count
-9 			reset C to 0
+4 		if item i is monitored
+5			increase counter of item i by 1
+6		else new item with count (#window) +1
+7		increase C by 1
+8		if C = W
+9			decrement all counters by 1
+10			remove items with 0 count
+11			reset C to 0
 ```
 
 The actual count of each item depend on the window size. Still, it is possible to find the same frequent itemset; if `stream-size = N` and `window-size = W = 1/e`, then the **frequency error** is `f_e = eN`.
@@ -264,100 +270,53 @@ All items are dropped from the list.
 |a|c|a|a|
 |-|-|-|-|
 
-The itemset list becomes:
+We're at iteration 1, DELTA = 1. The itemset list becomes:
+
+|a|c|
+|-|-|
+|3+1|1+1|
+
+After the update:
 
 |a|c|
 |-|-|
 |3|1|
-
-After the update:
-
-|a|
-|-|
-|2|
 
 `STEP 3`
 
 |a|c|d|c|
 |-|-|-|-|
 
-The itemset list becomes:
+We're at iteration 2, DELTA = 2. The itemset list becomes:
 
 |a|c|d|
 |-|-|-|
-|3|2|1|
+|4|3|1+2|
 
 After the update:
 
-|a|c|
-|-|-|
-|3|2|
+|a|c|d|
+|-|-|-|
+|3|2|2|
 
 `STEP 4`
 
 |a|a|c|b|
 |-|-|-|-|
 
-The itemset list becomes:
+We're at iteration 3, DELTA = 3. The itemset list becomes:
 
-|a|c|b|
-|-|-|-|
-|5|3|1|
+|a|c|b|d|
+|-|-|-|-|
+|5|3|1+3|2|
 
 After the update:
 
-|a|c|
-|-|-|
-|4|2|
+|a|c|b|d|
+|-|-|-|-|
+|4|2|3|1|
 
 For this example, we have `stream-size = N = 16` and `window-size = W = 4 = 1/e --> e = 1/4 = 0.25`, the `frequency error = f_e = 16*0.25 = 4`.
-
-##### Example 2:
-
-What if, with the same stream, we changed to window size to something like *8*?
-
-|a|b|c|d|a|c|a|a|a|c|d|c|a|a|c|b|
-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
-
-`STEP 0`
-
-Let's define a window size `W = 8`. At the beginning, the window counter is `C = 0`.
-
-`STEP 1`
-
-|a|b|c|d|a|c|a|a|
-|-|-|-|-|-|-|-|-|
-
-The itemset list becomes:
-
-|a|b|c|d|
-|-|-|-|-|
-|4|1|2|1|
-
-After the update:
-
-|a|c|
-|-|-|
-|3|1|
-
-`STEP 2`
-
-|a|c|d|c|a|a|c|b|
-|-|-|-|-|-|-|-|-|
-
-The itemset list becomes:
-
-|a|c|d|b|
-|-|-|-|-|
-|6|4|1|1|
-
-After the update:
-
-|a|c|
-|-|-|
-|5|3|
-
-For this example, we have `stream-size = N = 16` and `window-size = W = 8 = 1/e --> e = 1/8 = 0.125`, the `frequency error = f_e = 16*0.125 = 2`.
 
 ### Frequent Itemset Mining: SPACE SAVING Algorithm
 
