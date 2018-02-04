@@ -607,6 +607,17 @@ This algorithm does not seem immediately applicable to data streams, because it 
 
 ![online-bagging.png](./images/online-bagging.png)![poisson1.png](./images/poisson1.png)
 
+##### Example:
+
+|A1|A2|A3|
+|--|--|--|
+|.1|.2|+|
+|.3|.8|-|
+|.4|.3|+|
+|.3|.2|-|
+|.5|.7|+|
+
+> Given a Poisson Distribution `P(1) = {0,1,0,1,0,3,2,2,0,0,0,1,1,1,1}`, build an *Online Bagging* majority vote classifier made of 3 majority vote classifier.
 
 #### Ensemble: Hoeffding Option Trees
 
