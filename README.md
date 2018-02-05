@@ -573,6 +573,76 @@ Two methods exists for error estimation:
 
 ## Classification
 
+In machine learning and statistics, classification is the problem of identifying to which of a set of categories (sub-populations) a new observation belongs, on the basis of a training set of data containing observations (or instances) whose category membership is known.
+
+Different kind of classification problem exist:
+- binary classification, where given an input we want to predict one binary value for one label
+	- y(x) = {0/1}
+- multi-class classification, where the prediction consists of choosing (read, setting to true) only one of multiple labels
+	- y(x) = {1,0,0} v {0,1,0} v {0,0,1} [only one of those solution is ok, every comma separates two labels]
+- multi-label classification, where each label can have its binary value (multiple labels can be set)
+	- y(x) = any combination of 3 bits, 2³ possible prediction targets
+- multi-output/multi-dimensional classification, where the output is multiple outputs for multiple labels
+
+![classif_schema.png](./images/classif_schema.png)
+
+The classification problem can then be defined as:
+
+> Given a set of `L` labels, we wish to obtain a model `h` that xan take an input `x` and produce a prediction `y=h(x)`.
+
+### Multi-label classification
+
+The algorithms analyzed in previous courses were mostly single-label (binary or multi-class), which can be graphically represented as:
+
+<div style="text-align:center"><img src ="./images/single-label.png" /></div>
+
+So, how it is possible to obtain a multi-label prediction, without having to come up with brand new and very problem-specific models?
+
+#### Solution 1 : Binary Relevance - Classifier Chain
+
+One could think of considering a multi-label problem as a composition of multiple **binary problems**, by using each input to predict a different label. This means transforming the dataset, composed of `N` instances and `L` labels to predict, into `L` separate binary problems, one for each label:
+
+<div style="text-align:center"><img src ="./images/multi-label.png" /></div>
+
+However, this solution **assumes independence among target labels**, which is an hypothesis that generally does not hold in the representation of the knowledge we have of the world. In most cases, ![no_indep_ass.png](./images/no_indep_ass.png) .
+
+#### Solution 2 : A Probabilistic Cascade - Probabilistic Classifier Chain
+
+Given an instance `x`, dependence among target labels can be represented as a probabilistic chain:
+
+<div style="text-align:center"><img src ="./images/class-chain.png" /><br />
+<img src ="./images/class-chain-formula.png" /></div>
+
+A probabilistic classifier chain (formula above) tries to estimate the conditional distribution
+`p(y|x)` using the chain rule of probabilities.  Learning a multilabel classifier is reduced to learning K independent probabilistic binary classifiers. These independent base classifiers may be, for example, logistic regression models with a specialized feature representation.
+
+Among the advantages of the PCC approach:
+- it is a decomposition method, therefore:
+	- it leverages existing binary models
+	- it is computationally inexpensive
+	- the decomposition itself is *probabilistically* motivated
+- it does not require any prior transformations of the dataset
+- it is a principled probabilistic model with a theoretical understanding of how it may be used to produce Bayes optimal predictions for a variety of loss functions (*EN:* don't ask, just copy. Took from [Learning and Inference in Probabilistic Classifier
+Chains with Beam Search](https://goo.gl/8471wo) )
+
+#### Solution 3 - Label-PowerSet approach
+
+Both methods above try to estimate/learn the probabilities `P(y_j|x,y_1,...y_j-1)` individually, by decomposing the multi-label problem into multiple binary classification problems. However, it is possible to try and estimate `P(y|x)` directly, where the target space `Y` contains all the possible `2^L` distinct combinations of the label values: this is a **powerset** of the solution, therefore this is the **powerset approach**.
+
+It is sufficient to transform the dataset from having multiple labels to a **multi-class dataset**:
+
+![multi-label-dataset.png](./images/multi-label-dataset.png)![multi-class-dataset.png](./images/multi-class-dataset.png)
+
+This way, standard *multi-class* algorithms can be used to predict the multi-class label and consequently the original target labels. However, the Label-PowerSet method has a few shortcomings:
+- **Complexity**: the more target labels, the bigger the solution space (up to `2^L` combinations);
+- **Imbalance** (label sparsity) and **Overfitting**: because of the size of the solution space, the dataset is very imbalanced since only a few examples actually target some class labels.
+
+Possible solutions involve *pruning*, or *dealing with subsets*.
+
+<!-- #### Classification models: Naive Bayes -->
+
+<!-- #### Classification models: Logistic Regression -->
+
 *****
 
 ## Ensemble Learning
