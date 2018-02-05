@@ -619,6 +619,55 @@ This algorithm does not seem immediately applicable to data streams, because it 
 
 > Given a Poisson Distribution `P(1) = {0,1,0,1,0,3,2,2,0,0,0,1,1,1,1}`, build an *Online Bagging* majority vote classifier made of 3 majority vote classifier.
 
+The `Poisson(1)` distribution is used to give weights to each example, for every model. The algorithm is:
+
+```
+0	i = 0
+1 	for each example
+2		for each model
+3			emit(<a3,weight=P(1)[i]>)
+4	majority vote for each classifier
+5 	majority vote across classifier
+```
+
+`STEP 1, example 0: <.1,.2,+>`
+
+- m1, w = P(1)[0] = 0 => m1(<+,0>)
+- m2, w = P(1)[1] = 1 => m2(<+,1>)
+- m3, w = P(1)[2] = 0 => m3(<+,0>)
+
+`STEP 2, example 1: <.3,.8,->`
+- m1, w = P(1)[3] = 1 => m1(<-,1>)
+- m2, w = P(1)[4] = 0 => m2(<-,0>)
+- m3, w = P(1)[5] = 3 => m3(<-,3>)
+
+`STEP 3, example 2: <.4,.3,+>`
+- m1, w = P(1)[6] = 2 => m1(<+,2>)
+- m2, w = P(1)[7] = 2 => m2(<+,2>)
+- m3, w = P(1)[8] = 0 => m3(<+,0>)
+
+`STEP 4, example 3: <.3,.2,->`
+- m1, w = P(1)[9] = 0 => m1(<-,0>)
+- m2, w = P(1)[10] = 0 => m2(<-,0>)
+- m3, w = P(1)[11] = 1 => m3(<-,1>)
+
+`STEP 5, example 4: <.5,.7,+>`
+- m1, w = P(1)[12] = 1 => m1(<+,1>)
+- m2, w = P(1)[14] = 1 => m2(<+,1>)
+- m3, w = P(1)[13] = 1 => m3(<+,1>)
+
+`CLASSIFIER M1`
+- <+,0> ; <-,1> ; <+,2> ; <-,0> ; <+,1> => -1+2+1=2 => **emit(+)**
+
+`CLASSIFIER M2`
+- <+,1> ; <-,0> ; <+,2> ; <-,0> ; <+,1> => +1+2=3 => **emit(+)**
+
+`CLASSIFIER M3`
+- <+,0> ; <-,3> ; <+,0> ; <-,1> ; <+,1> => -3-1+1 => **emit(-)**
+
+`ENSEMBLE`
+- <+,+,-> => **emit(+)**
+
 #### Ensemble: Hoeffding Option Trees
 
 ![hoeff-opt-trees.png](./images/hoeff-opt-trees.png)
