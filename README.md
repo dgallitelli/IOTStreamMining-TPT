@@ -598,7 +598,7 @@ The classification problem can then be defined as:
 
 The algorithms analyzed in previous courses were mostly single-label (binary or multi-class), which can be graphically represented as:
 
-<div style="text-align:center"><img src ="./images/single-label.png" /></div>
+<div style="text-align:center"><img src ="./images/single-label.png"/></div>
 
 So, how it is possible to obtain a multi-label prediction, without having to come up with brand new and very problem-specific models?
 
@@ -606,7 +606,7 @@ So, how it is possible to obtain a multi-label prediction, without having to com
 
 One could think of considering a multi-label problem as a composition of multiple **binary problems**, by using each input to predict a different label. This means transforming the dataset, composed of `N` instances and `L` labels to predict, into `L` separate binary problems, one for each label:
 
-<div style="text-align:center"><img src ="./images/multi-label.png" /></div>
+<div style="text-align:center"><img src ="./images/multi-label.png"/></div>
 
 However, this solution **assumes independence among target labels**, which is an hypothesis that generally does not hold in the representation of the knowledge we have of the world. In most cases, ![no_indep_ass.png](./images/no_indep_ass.png) .
 
@@ -654,7 +654,44 @@ Another approach is to combine the advantages of the *Label-PowerSet* method and
 
 This approach greatly reduces the problem complexity, from `O(2^L)` to `O(M*2^k)`, by reducing the size of `Y` (the number of combinations), it reduces connectivity among the target label `y_i`, and it even increases predictive performance.
 
-<!-- ### Multi-Label Evaluation -->
+### Multi-Label Evaluation
+
+In single-label classification problem, computing the *accuracy* of a model is pretty easy, since one should only compare whether the prediction is equal to the target label or not (emitting 1 if this condition holds, 0 otherwise), and then computing the mean of this values.
+
+However, in multi-label classification, comparing a prediction with the target would look something like this:
+
+![eval-dataset.png](./images/eval-dataset.png)
+
+This calls for a new definition of *evaluation metrics*, since other condition apart from equality might give further insight into the problem. Given the target solution and our prediction, it is possible to compute:
+
+- **Hamming Loss**: ![hamming-loss.png](./images/hamming-loss.png)
+	- It basically represents how many bits are different globally
+	- in the example, 4 bits are different from the left set (target set) = 4/20 = 1/5 = 20%
+- **0/1 Loss**: ![01-loss.png](./images/01-loss.png)
+	- How many predictions present at least a bit different from the target set
+	- in the example, 3 solutions are different out of 5 = 3/5 = 0.60
+	- often used as *Exact Match*, by computing `1-0/1Loss`
+- **Accuracy/Jaccard Index**: ![accuracy-multi-label.png](./images/accuracy-multi-label.png)
+	- average of the [count 1 of the AND between target and prediction] / [count 1 of the OR between target and prediction] (each number is at most 1!)
+	- in the example:
+		- AND(1010, 1001) = 1 | OR(1010, 1001) = 3 --> 1/3
+		- apply for all of them
+		- 1/5 (1/3 + 1 + 1 + 1/2 + 1/2) = 0.67
+
+
+However, sometimes it might be useful to evaluate **probabilities/confidences** rather than predictions:
+
+<div style="text-align:center"><img src ="./images/prob-eval-multilabel.png"/></div>
+
+In this case, we want to evaluate **Log Loss**, like *Hamming Loss*, to encourage "good confidence". The goal of our machine learning models is to minimize this value. A perfect model would have a log loss of 0. Log loss increases as the predicted probability diverges from the actual label. Log Loss takes into account the uncertainty of your prediction based on how much it varies from the actual label. This gives us a more nuanced view into the performance of our model. Instead, **accuracy** is the count of predictions where your predicted value equals the actual value. Accuracy is not always a good indicator because of its yes or no nature. The log loss function is also known as **cross entropy** for multiple classes.
+
+Let's suppose, given the dataset above, that we want to compute the *logarithmic loss* for when the third bit is 1. So, for `y[2] = 1`, we predict wrong twice, with `0.4` and `0.1` probability. Therefore, we have two losses: `-log(0.4) = 0.92` and `-log(0.1) = 2.30`
+
+
+Sometimes, even **ranking** can be used as a metric, in order to evaluate the average fraction of label pairs mis-ordered for `x`: we compute the **Ranking Loss**, as ![ranking-loss.png](./images/ranking-loss.png) where ![ranking-loss2.png](./images/ranking-loss2.png) . The function `I(c)` return true if the condition `c` holds.
+<!-- WHAT THE FUCK - Example incomprehensible -->
+
+![metrics.png](./images/metrics.png)
 
 *****
 
