@@ -590,6 +590,10 @@ The classification problem can then be defined as:
 
 > Given a set of `L` labels, we wish to obtain a model `h` that xan take an input `x` and produce a prediction `y=h(x)`.
 
+<!-- #### Classification models: Naive Bayes -->
+
+<!-- #### Classification models: Logistic Regression -->
+
 ### Multi-label classification
 
 The algorithms analyzed in previous courses were mostly single-label (binary or multi-class), which can be graphically represented as:
@@ -639,9 +643,18 @@ This way, standard *multi-class* algorithms can be used to predict the multi-cla
 
 Possible solutions involve *pruning*, or *dealing with subsets*.
 
-<!-- #### Classification models: Naive Bayes -->
+#### Solution 4 - Meta Labels
 
-<!-- #### Classification models: Logistic Regression -->
+Another approach is to combine the advantages of the *Label-PowerSet* method and *Binary Relevance*. A **Meta-Labels** approach is made of 3 operations:
+- *decomposing* the labelset into `M` sets of `k` labels, , e.g., `{A, B}∪{C}` or `{A, B}∪{B,C}`
+- *relabeling* applying Label-PowerSet method
+- *recombination* of meta-label prediction into a label vector prediction
+
+<div style="text-align:center"><img src ="./images/meta-labels.png" /></div>
+
+This approach greatly reduces the problem complexity, from `O(2^L)` to `O(M*2^k)`, by reducing the size of `Y` (the number of combinations), it reduces connectivity among the target label `y_i`, and it even increases predictive performance.
+
+<!-- ### Multi-Label Evaluation -->
 
 *****
 
